@@ -58,7 +58,7 @@ const LoginScreen = ({navigation}) => {
         password: password,
       });
 
-      if (response.data.meta.status === 'success') {
+      if (response.data.meta.code == '200') {
         const {user_id, name, npk} = response.data.data;
 
         await AsyncStorage.setItem('user_id', user_id);
@@ -66,7 +66,7 @@ const LoginScreen = ({navigation}) => {
         await AsyncStorage.setItem('npk', npk);
 
         console.log(response.data);
-        navigation.navigate('Scan');
+        navigation.navigate('Menu');
       } else {
         setErrorMessage('NPK or Password incorrect.');
       }
