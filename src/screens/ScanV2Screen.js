@@ -19,7 +19,6 @@ import {
 const ScanV2Screen = ({navigation, route}) => {
     const {caseData} = route.params;
     const scanInputRef = useRef(null);
-    const [scanParameter, setScanParameter] = useState('');
     const [qrCode, setQrCode] = useState('');
     const [error, setError] = useState('');
     const [isJudgmentVisible, setIsJudgmentVisible] = useState(false);
@@ -49,6 +48,7 @@ const ScanV2Screen = ({navigation, route}) => {
 
     const handleSubmit = async () => {
         try {
+            setError('');
             // Check qr content length
             if (qrCode.length != caseData.qr_length) {
                 setError('QR tidak sesuai, silahkan scan lagi.');
@@ -113,16 +113,11 @@ const ScanV2Screen = ({navigation, route}) => {
         setIsJudgmentVisible(true);
     };
 
-    const handleSelectScanParameter = item => {
-        // item contains the selected object
-        if (item) {
-            setScanParameter(item.id);
-        }
-    };
-
     const getScanProgress = async () => {
         try {
-            const {data} = await api.get('/scan/progress');
+            const {data} = await api.get(
+                `/scan/progress/${caseData.suspect_case_id}`,
+            );
 
             if (data.meta.code == '200') {
                 setScanProgress({
@@ -144,18 +139,6 @@ const ScanV2Screen = ({navigation, route}) => {
         <AutocompleteDropdownContextProvider>
             <ScrollView contentContainerStyle={{flexGrow: 1}} style={{flex: 1}}>
                 <View style={styles.container}>
-                    {/* <AutocompleteDropdown
-                        clearOnFocus={false}
-                        closeOnBlur={true}
-                        closeOnSubmit={false}
-                        onSelectItem={handleSelectScanParameter}
-                        dataSet={scanParameters}
-                        containerStyle={styles.autocomplete}
-                        textInputProps={{
-                            placeholder: 'Pilih Scan Parameter...',
-                        }}
-                    /> */}
-
                     <TextInput
                         ref={scanInputRef}
                         style={styles.input}
