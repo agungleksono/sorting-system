@@ -43,7 +43,7 @@ const MenuScreen = ({navigation}) => {
                     if (item.scan_type_id === '001') {
                         navigation.navigate('ScanV2', {caseData: item});
                     } else if (item.scan_type_id === '002') {
-                        navigation.navigate('Scan', {caseData: item});
+                        navigation.navigate('ScanMultiBox', {caseData: item});
                     }
                 }}>
                 <View style={styles.textContainer}>
@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
     card: {
         width: '84%',
         padding: 16,
-        marginBottom: 10,
         backgroundColor: '#f0f0f0',
         borderRadius: 10,
         elevation: 5, // Adds shadow to the card (Android)
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
         borderLeftColor: '#009688',
     },
     cardTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#212121',
         flexShrink: 1,

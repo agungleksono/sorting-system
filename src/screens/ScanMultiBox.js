@@ -11,7 +11,6 @@ import {
     Modal,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    ActivityIndicator,
 } from 'react-native';
 import api from '../api/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,16 +19,16 @@ import {
     AutocompleteDropdownContextProvider,
 } from 'react-native-autocomplete-dropdown';
 
-const ScanV2Screen = ({navigation, route}) => {
+const ScanMultiBox = ({navigation, route}) => {
     const {caseData} = route.params;
     const scanInputRef = useRef(null);
     const [qrCode, setQrCode] = useState('');
+    const [quantity, setQuantity] = useState('');
     const [error, setError] = useState('');
-    const [isJudgmentVisible, setIsJudgmentVisible] = useState(false);
     const [isSuspect, setIsSuspect] = useState('');
-    const [loading, setLoading] = useState(false);
     const [isMenuVisible, setMenuVisible] = useState(false);
     const [judgmentState, setJudgmentState] = useState({
+        judgment: false,
         message: '',
         color: '',
     });
@@ -43,7 +42,6 @@ const ScanV2Screen = ({navigation, route}) => {
         scanParamTitle: '',
         scanParamValue: '',
     });
-
     // Define the dataset for scan parameter
     const scanParameters = [
         {id: 'PART_NO', title: 'Part No'},
@@ -55,8 +53,15 @@ const ScanV2Screen = ({navigation, route}) => {
     const handleSubmit = async () => {
         try {
             setError('');
+
+            // Check quantity
+            if (quantity == '') {
+                setError('Isi quantity terlebih dahulu.');
+                setQrCode('');
+                return;
+            }
+
             // Check qr content length
-            setLoading(true); // Show loading spinner
             if (qrCode.length != caseData.qr_length) {
                 setError('QR tidak sesuai, silahkan scan lagi.');
                 setQrCode('');
@@ -68,28 +73,34 @@ const ScanV2Screen = ({navigation, route}) => {
             }
 
             const npk = await AsyncStorage.getItem('npk');
-            const {data} = await api.post('/scan', {
+            const {data} = await api.post('/scan/multi-box', {
                 scan_parameter: caseData.scan_parameter_code,
                 qr_code: qrCode,
                 suspect_case_id: caseData.suspect_case_id,
                 scanned_by: npk,
+                progress_quantity: quantity,
             });
 
             if (data.meta.code === 422) {
-                setIsJudgmentVisible(false);
                 setQrCode('');
-                setResult(prev => ({
-                    ...prev,
+                setResult(prevState => ({
+                    ...prevState,
                     isResultVisible: false,
+                }));
+                setJudgmentState(prevState => ({
+                    ...prevState,
+                    judgment: false,
                 }));
                 scanInputRef.current.focus();
                 return Alert.alert('Scan Gagal!', 'QR sudah discan!');
             }
 
             data.data.is_suspect ? showNgAlert() : showOkAlert();
+            // data.data.is_suspect === true ? showNgAlert() : showOkAlert();
 
             setIsSuspect(data.data.is_suspect);
             getScanProgress();
+            setQuantity('');
             setQrCode('');
             setResult({
                 isResultVisible: true,
@@ -103,27 +114,25 @@ const ScanV2Screen = ({navigation, route}) => {
             scanInputRef.current?.focus();
         } catch (error) {
             console.error('Error handleSubmit():', error);
-        } finally {
-            setLoading(false);
         }
     };
 
     /* Function to show OK alert with green color */
     const showOkAlert = () => {
         setJudgmentState({
+            judgment: true,
             message: 'OK',
             color: 'green',
         });
-        setIsJudgmentVisible(true);
     };
 
     /* Function to show NG alert with red color */
     const showNgAlert = () => {
         setJudgmentState({
+            judgment: true,
             message: 'NG',
             color: 'red',
         });
-        setIsJudgmentVisible(true);
     };
 
     const getScanProgress = async () => {
@@ -170,6 +179,7 @@ const ScanV2Screen = ({navigation, route}) => {
     };
 
     const handleMenuListSuspect = () => {
+        console.log(caseData);
         navigation.navigate('ListSuspect', {caseData: caseData});
         setMenuVisible(false);
     };
@@ -178,6 +188,12 @@ const ScanV2Screen = ({navigation, route}) => {
         <AutocompleteDropdownContextProvider>
             <ScrollView contentContainerStyle={{flexGrow: 1}} style={{flex: 1}}>
                 <View style={styles.container}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Quantity"
+                        value={quantity}
+                        onChangeText={setQuantity}
+                    />
                     <TextInput
                         ref={scanInputRef}
                         style={styles.input}
@@ -205,78 +221,58 @@ const ScanV2Screen = ({navigation, route}) => {
                         </View>
                     ) : null}
 
-                    {loading ? (
-                        <ActivityIndicator size="large" color="#0000ff" />
-                    ) : (
-                        <>
-                            {/* Result Component */}
-                            {result.isResultVisible && (
-                                <View
-                                    style={[
-                                        styles.resultContainer,
-                                        {
-                                            backgroundColor: isSuspect
-                                                ? '#f8d7da'
-                                                : '#d4edda',
-                                            borderColor: isSuspect
-                                                ? 'red'
-                                                : '#28a745',
-                                        },
-                                    ]}>
-                                    <Text
-                                        style={[
-                                            styles.resultText,
-                                            {
-                                                color: isSuspect
-                                                    ? 'red'
-                                                    : '#28a745',
-                                                fontSize: 16,
-                                            },
-                                        ]}>
-                                        {isSuspect
-                                            ? 'Found Suspect Part!'
-                                            : 'Suspect Part Not Found.'}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.resultText,
-                                            {
-                                                color: isSuspect
-                                                    ? 'red'
-                                                    : '#28a745',
-                                            },
-                                        ]}>
-                                        Part No. : {result.partNo}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.resultText,
-                                            {
-                                                color: isSuspect
-                                                    ? 'red'
-                                                    : '#28a745',
-                                            },
-                                        ]}>
-                                        {result.scanParamTitle} :{' '}
-                                        {result.scanParamValue}
-                                    </Text>
-                                </View>
-                            )}
+                    {/* Result Component */}
+                    {result.isResultVisible && (
+                        <View
+                            style={[
+                                styles.resultContainer,
+                                {
+                                    backgroundColor: isSuspect
+                                        ? '#f8d7da'
+                                        : '#d4edda',
+                                    borderColor: isSuspect ? 'red' : '#28a745',
+                                },
+                            ]}>
+                            <Text
+                                style={[
+                                    styles.resultText,
+                                    {
+                                        color: isSuspect ? 'red' : '#28a745',
+                                        fontSize: 16,
+                                    },
+                                ]}>
+                                {isSuspect
+                                    ? 'Found Suspect Part!'
+                                    : 'Suspect Part Not Found.'}
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.resultText,
+                                    {color: isSuspect ? 'red' : '#28a745'},
+                                ]}>
+                                Part No. : {result.partNo}
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.resultText,
+                                    {color: isSuspect ? 'red' : '#28a745'},
+                                ]}>
+                                {result.scanParamTitle} :{' '}
+                                {result.scanParamValue}
+                            </Text>
+                        </View>
+                    )}
 
-                            {/* <View></View> */}
-
-                            {isJudgmentVisible && (
-                                <View
-                                    style={[
-                                        styles.squareAlert,
-                                        {backgroundColor: judgmentState.color},
-                                    ]}>
-                                    <Text style={styles.alertText}>
-                                        {judgmentState.message}
-                                    </Text>
-                                </View>
-                            )}
-                        </>
+                    {judgmentState.judgment && (
+                        <View
+                            style={[
+                                styles.squareAlert,
+                                {backgroundColor: judgmentState.color},
+                            ]}>
+                            <Text style={styles.alertText}>
+                                {judgmentState.message}
+                            </Text>
+                        </View>
                     )}
 
                     {/* Dropdown Menu Modal */}
@@ -451,4 +447,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ScanV2Screen;
+export default ScanMultiBox;

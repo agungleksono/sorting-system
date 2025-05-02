@@ -1,5 +1,14 @@
 import React, {useState, useRef, useEffect} from 'react';
-import {View, TextInput, Button, Text, StyleSheet, Alert} from 'react-native';
+import {
+    View,
+    TextInput,
+    Button,
+    Text,
+    StyleSheet,
+    Alert,
+    TouchableOpacity,
+    ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/axiosInstance';
@@ -8,6 +17,7 @@ const LoginScreen = ({navigation}) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const usernameInputRef = useRef(null);
     const passwordInputRef = useRef(null);
@@ -56,6 +66,8 @@ const LoginScreen = ({navigation}) => {
 
     const handleLogin = async () => {
         try {
+            setLoading(true);
+
             const response = await api.post('/auth/login', {
                 npk: username,
                 password: password,
@@ -76,6 +88,8 @@ const LoginScreen = ({navigation}) => {
         } catch (error) {
             console.error(error);
             setErrorMessage('Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -111,10 +125,21 @@ const LoginScreen = ({navigation}) => {
             {errorMessage ? (
                 <Text style={styles.errorText}>{errorMessage}</Text>
             ) : null}
-            <Button title="Login" onPress={handleLogin} />
-            {/* <Text style={styles.footer}>
-        Don't have an account? <Text style={styles.link}>Sign Up</Text>
-      </Text> */}
+
+            <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}>
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.buttonText}>Login</Text>
+                )}
+            </TouchableOpacity>
+            {/* <Button title="Login" onPress={handleLogin} /> */}
+            <Text style={styles.footer}>
+                {'\u00A9'} 2025. Reserved by Denso Indonesia - QA
+            </Text>
         </View>
     );
 };
@@ -150,14 +175,26 @@ const styles = StyleSheet.create({
         color: 'red',
         marginBottom: 12,
     },
-    //   footer: {
-    //     marginTop: 16,
-    //     textAlign: 'center',
-    //     fontSize: 16,
-    //   },
-    //   link: {
-    //     color: 'blue',
-    //   },
+    button: {
+        backgroundColor: '#007bff',
+        paddingVertical: 12,
+        borderRadius: 4,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    footer: {
+        marginTop: 16,
+        textAlign: 'center',
+        fontSize: 12,
+    },
 });
 
 export default LoginScreen;
