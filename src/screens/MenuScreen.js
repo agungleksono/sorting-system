@@ -7,11 +7,15 @@ import {
     TouchableOpacity,
     FlatList,
     ScrollView,
+    Modal,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import api from '../api/axiosInstance';
+import {AutocompleteDropdownContextProvider} from 'react-native-autocomplete-dropdown';
 
 const MenuScreen = ({navigation}) => {
     const [cases, setCases] = useState([]);
+    const [isMenuVisible, setMenuVisible] = useState(false);
 
     const getCases = async () => {
         try {
@@ -59,6 +63,24 @@ const MenuScreen = ({navigation}) => {
         </View>
     );
 
+    // Add the three dots button in the header using headerRight
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={() => setMenuVisible(true)}
+                    style={styles.headerButton}>
+                    <Text style={styles.headerButtonText}>...</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation]);
+
+    const handleSettingPrint = () => {
+        navigation.navigate('PrintSetting');
+        setMenuVisible(false);
+    };
+
     return (
         //         {/* Render the cases in a FlatList for efficient rendering */}
         // <FlatList
@@ -90,6 +112,30 @@ const MenuScreen = ({navigation}) => {
                     onPress={() => navigation.navigate('ScanV2')}
                 />
             </View> */}
+
+            {/* Dropdown Menu Modal */}
+            {isMenuVisible && (
+                <Modal
+                    transparent={true}
+                    animationType="fade"
+                    visible={isMenuVisible}
+                    onRequestClose={() => setMenuVisible(false)}>
+                    <TouchableWithoutFeedback
+                        onPress={() => setMenuVisible(false)}>
+                        <View style={styles.modalBackground}>
+                            <View style={styles.menuContainer}>
+                                <TouchableOpacity
+                                    onPress={handleSettingPrint}
+                                    style={styles.menuItem}>
+                                    <Text style={styles.menuText}>
+                                        Setting Print
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            )}
         </View>
         // </ScrollView>
     );
@@ -159,6 +205,38 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between', // Distributes space between the items
         alignItems: 'center', // Ensures vertical alignment in the middle
         width: '100%', // Takes full width of the container
+    },
+
+    // Style 3 dots navigation bar button
+    headerButton: {
+        paddingHorizontal: 10,
+        marginBottom: 15,
+        backgroundColor: 'transparent',
+    },
+    headerButtonText: {
+        fontSize: 30,
+        color: '#000',
+    },
+
+    // Style modal navigation bar button
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    },
+    menuContainer: {
+        width: 200,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        elevation: 5,
+    },
+    menuItem: {
+        padding: 15,
+    },
+    menuText: {
+        fontSize: 16,
+        color: '#000',
     },
 });
 

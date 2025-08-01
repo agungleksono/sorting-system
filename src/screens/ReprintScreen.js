@@ -15,6 +15,7 @@ import {
     AutocompleteDropdown,
     AutocompleteDropdownContextProvider,
 } from 'react-native-autocomplete-dropdown';
+import {printLabel} from '../utils/print';
 
 const ReprintScreen = ({navigation, route}) => {
     const {caseData} = route.params;
@@ -84,6 +85,10 @@ const ReprintScreen = ({navigation, route}) => {
                 scanParamValue: data.data.search_value,
             });
             scanInputRef.current?.focus();
+            printLabel({
+                mainText: data.data.is_suspect ? 'NG' : 'OK',
+                partNo: data.data.part_no,
+            });
         } catch (error) {
             console.error('Error handleSubmit():', error);
         }

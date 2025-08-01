@@ -11,6 +11,7 @@ import MenuScreen from './src/screens/MenuScreen';
 import ScanMultiBox from './src/screens/ScanMultiBox';
 import ReprintScreen from './src/screens/ReprintScreen';
 import ListSuspectScreen from './src/screens/ListSuspectScreen';
+import PrintSettingsScreen from './src/screens/PrintSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +49,11 @@ const App = () => {
                     name="ListSuspect"
                     component={ListSuspectScreen}
                     options={{title: 'List Suspect'}}
+                />
+                <Stack.Screen
+                    name="PrintSetting"
+                    component={PrintSettingsScreen}
+                    options={{title: 'Print Setting'}}
                 />
             </Stack.Navigator>
         </NavigationContainer>
