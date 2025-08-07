@@ -9,7 +9,6 @@ import {
     TouchableOpacity,
     ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/axiosInstance';
 
@@ -22,49 +21,12 @@ const LoginScreen = ({navigation}) => {
     const usernameInputRef = useRef(null);
     const passwordInputRef = useRef(null);
 
-    // const handleLogin = async () => {
-    //   // if (username === 'user' && password === 'password') {
-    //   //   Alert.alert('Login Successful!', 'You are now logged in');
-    //   //   navigation.navigate('Scan'); // Navigate to Home screen after successful login
-    //   // } else {
-    //   //   Alert.alert('Error', 'Invalid username or password');
-    //   // }
-    //   try {
-    //     // Configure Axios headers with Bearer token
-    //     const config = {
-    //       headers: {
-    //         Authorization: `Bearer tt793cqBV3JffiVbm4sVOJ33ghcXB5IrWiFTo4oRsgIq9LPZpUU31bpBLjWjECGj`, // Pass Bearer token in the headers
-    //       },
-    //     };
-
-    //     const response = await axios.post(
-    //       'http://192.168.10.151:8000/api/v1/auth/login',
-    //       {
-    //         npk: username,
-    //         password: password,
-    //       },
-    //       config,
-    //     );
-
-    //     if (response.data.meta.status === 'success') {
-    //       const {user_id, name, npk} = response.data.data;
-
-    //       await AsyncStorage.setItem('user_id', user_id);
-    //       await AsyncStorage.setItem('name', name);
-    //       await AsyncStorage.setItem('npk', npk);
-
-    //       console.log(response.data);
-    //       navigation.navigate('Scan');
-    //     } else {
-    //       setErrorMessage('NPK or Password incorrect.');
-    //     }
-    //   } catch (error) {
-    //     console.error(error);
-    //     setErrorMessage('Something went wrong. Please try again.');
-    //   }
-    // };
-
     const handleLogin = async () => {
+        if (!username.trim() || !password.trim()) {
+            setErrorMessage('Please enter both username and password.');
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -80,7 +42,6 @@ const LoginScreen = ({navigation}) => {
                 await AsyncStorage.setItem('name', name);
                 await AsyncStorage.setItem('npk', npk);
 
-                console.log(response.data);
                 navigation.navigate('Menu');
             } else {
                 setErrorMessage('NPK or Password incorrect.');
@@ -104,13 +65,16 @@ const LoginScreen = ({navigation}) => {
     return (
         <View style={styles.container}>
             <Text style={styles.appName}>Sorting System</Text>
-            <Text style={styles.header}>Login</Text>
+            {/* <Text style={styles.header}>Login</Text> */}
             <TextInput
                 ref={usernameInputRef}
                 style={styles.input}
                 placeholder="Username"
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(text) => {
+                    setUsername(text);
+                    setErrorMessage("");
+                }}
                 onSubmitEditing={handleSubmitUsername}
             />
             <TextInput
@@ -118,7 +82,10 @@ const LoginScreen = ({navigation}) => {
                 style={styles.input}
                 placeholder="Password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                    setPassword(text);
+                    setErrorMessage("");
+                }}
                 onSubmitEditing={handleLogin}
                 secureTextEntry
             />
@@ -136,7 +103,7 @@ const LoginScreen = ({navigation}) => {
                     <Text style={styles.buttonText}>Login</Text>
                 )}
             </TouchableOpacity>
-            {/* <Button title="Login" onPress={handleLogin} /> */}
+            
             <Text style={styles.footer}>
                 {'\u00A9'} 2025. Reserved by Denso Indonesia - QA
             </Text>
