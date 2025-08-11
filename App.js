@@ -12,6 +12,7 @@ import ScanMultiBox from './src/screens/ScanMultiBox';
 import ReprintScreen from './src/screens/ReprintScreen';
 import ListSuspectScreen from './src/screens/ListSuspectScreen';
 import PrintSettingsScreen from './src/screens/PrintSettingsScreen';
+import CaseCreateScreen from './src/screens/cases/CreateScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,7 +28,7 @@ const App = () => {
                 <Stack.Screen
                     name="Menu"
                     component={MenuScreen}
-                    options={{title: 'List Case'}}
+                    options={{title: 'List Cases'}}
                 />
                 <Stack.Screen name="Scan" component={ScanScreen} />
                 <Stack.Screen
@@ -54,6 +55,11 @@ const App = () => {
                     name="PrintSetting"
                     component={PrintSettingsScreen}
                     options={{title: 'Print Setting'}}
+                />
+                <Stack.Screen
+                    name="NewCase"
+                    component={CaseCreateScreen}
+                    options={{title: 'New Case'}}
                 />
             </Stack.Navigator>
         </NavigationContainer>
