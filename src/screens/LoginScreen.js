@@ -8,6 +8,9 @@ import {
     Alert,
     TouchableOpacity,
     ActivityIndicator,
+    SafeAreaView,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/axiosInstance';
@@ -17,6 +20,7 @@ const LoginScreen = ({navigation}) => {
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const usernameInputRef = useRef(null);
     const passwordInputRef = useRef(null);
@@ -63,104 +67,235 @@ const LoginScreen = ({navigation}) => {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.appName}>Sorting System</Text>
-            {/* <Text style={styles.header}>Login</Text> */}
-            <TextInput
-                ref={usernameInputRef}
-                style={styles.input}
-                placeholder="Username"
-                value={username}
-                onChangeText={(text) => {
-                    setUsername(text);
-                    setErrorMessage("");
-                }}
-                onSubmitEditing={handleSubmitUsername}
-            />
-            <TextInput
-                ref={passwordInputRef}
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={(text) => {
-                    setPassword(text);
-                    setErrorMessage("");
-                }}
-                onSubmitEditing={handleLogin}
-                secureTextEntry
-            />
-            {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
-            ) : null}
+        <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
+                <View style={styles.content}>
+                    <View style={styles.headerSection}>
+                        <Text style={styles.appName}>Sorting System</Text>
+                        <Text style={styles.subtitle}>Sign in to continue</Text>
+                    </View>
 
-            <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleLogin}
-                disabled={loading}>
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.buttonText}>Login</Text>
-                )}
-            </TouchableOpacity>
-            
-            <Text style={styles.footer}>
-                {'\u00A9'} 2025. Reserved by Denso Indonesia - QA
-            </Text>
-        </View>
+                    <View style={styles.formSection}>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Username</Text>
+                            <TextInput
+                                ref={usernameInputRef}
+                                style={styles.input}
+                                placeholder="Enter your username"
+                                placeholderTextColor="#9CA3AF"
+                                value={username}
+                                onChangeText={(text) => {
+                                    setUsername(text);
+                                    setErrorMessage("");
+                                }}
+                                onSubmitEditing={handleSubmitUsername}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                        </View>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Password</Text>
+                            <View style={styles.passwordContainer}>
+                                <TextInput
+                                    ref={passwordInputRef}
+                                    style={styles.passwordInput}
+                                    placeholder="Enter your password"
+                                    placeholderTextColor="#9CA3AF"
+                                    value={password}
+                                    onChangeText={(text) => {
+                                        setPassword(text);
+                                        setErrorMessage("");
+                                    }}
+                                    onSubmitEditing={handleLogin}
+                                    secureTextEntry={!showPassword}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
+                                <TouchableOpacity
+                                    style={styles.eyeButton}
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={styles.eyeIcon}>
+                                        {showPassword ? '👁️' : '👁️‍🗨️'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {errorMessage ? (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>{errorMessage}</Text>
+                            </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                            style={[styles.button, loading && styles.buttonDisabled]}
+                            onPress={handleLogin}
+                            disabled={loading}
+                            activeOpacity={0.8}>
+                            {loading ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Text style={styles.buttonText}>Sign In</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>
+                            {'\u00A9'} 2025. Reserved by Denso Indonesia - QA
+                        </Text>
+                    </View>
+                </View>
+
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        padding: 16,
         backgroundColor: '#fff',
     },
-    appName: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 30,
+    keyboardView: {
+        flex: 1,
     },
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 24,
+    content: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+    },
+    headerSection: {
+        alignItems: 'center',
+        marginBottom: 48,
+    },
+    appName: {
+        fontSize: 32,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 8,
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#6B7280',
+        fontWeight: '400',
+    },
+    formSection: {
+        width: '100%',
+    },
+    inputContainer: {
+        marginBottom: 20,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 8,
     },
     input: {
-        height: 40,
-        borderColor: '#ccc',
+        height: 52,
+        backgroundColor: '#F9FAFB',
         borderWidth: 1,
-        marginBottom: 12,
-        paddingLeft: 8,
-        borderRadius: 4,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        color: '#1F2937',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    passwordInput: {
+        flex: 1,
+        height: 52,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        color: '#1F2937',
+    },
+    eyeButton: {
+        paddingHorizontal: 16,
+        height: 52,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    eyeIcon: {
+        fontSize: 20,
+    },
+    errorContainer: {
+        backgroundColor: '#FEF2F2',
+        borderWidth: 1,
+        borderColor: '#FECACA',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 20,
     },
     errorText: {
-        color: 'red',
-        marginBottom: 12,
+        color: '#DC2626',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
     },
     button: {
-        backgroundColor: '#007bff',
-        paddingVertical: 12,
-        borderRadius: 4,
+        backgroundColor: '#14B8A6',
+        height: 52,
+        borderRadius: 12,
         alignItems: 'center',
-        marginTop: 10,
+        justifyContent: 'center',
+        shadowColor: '#3B82F6',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     buttonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     buttonDisabled: {
         opacity: 0.6,
     },
     footer: {
-        marginTop: 16,
-        textAlign: 'center',
+        paddingVertical: 24,
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    footerText: {
         fontSize: 12,
+        color: '#9CA3AF',
+        fontWeight: '400',
     },
 });
 
