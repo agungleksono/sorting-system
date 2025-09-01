@@ -1,18 +1,18 @@
 import React, {useState, useEffect} from 'react';
 import {
-    Button,
     View,
     TextInput,
     Text,
     StyleSheet,
     TouchableOpacity,
-    FlatList,
     ScrollView,
     Modal,
     TouchableWithoutFeedback,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import api from '../../api/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CreateScreen = ({navigation}) => {
     // State for form fields
@@ -21,6 +21,7 @@ const CreateScreen = ({navigation}) => {
     const [selectedScanParameter, setSelectedScanParameter] = useState('');
     const [scanQrText, setScanQrText] = useState('');
     const [qrCharacterLength, setQrCharacterLength] = useState('0');
+    const [loading, setLoading] = useState(false);
     
     // State for dropdown modals
     const [scanTypeModalVisible, setScanTypeModalVisible] = useState(false);
@@ -41,16 +42,17 @@ const CreateScreen = ({navigation}) => {
 
     // Auto-calculate QR character length when scanQrText changes
     useEffect(() => {
-        setQrCharacterLength(scanQrText.length.toString());
+        const cleanedText = scanQrText.replace(/\n/g, ''); // remove all newlines
+        setQrCharacterLength(cleanedText.length.toString());
     }, [scanQrText]);
 
     const handleScanTypeSelect = (option) => {
-        setSelectedScanType(option.label);
+        setSelectedScanType(option);
         setScanTypeModalVisible(false);
     };
 
     const handleScanParameterSelect = (option) => {
-        setSelectedScanParameter(option.label);
+        setSelectedScanParameter(option);
         setScanParameterModalVisible(false);
     };
 
@@ -70,17 +72,19 @@ const CreateScreen = ({navigation}) => {
         }
 
         try {
+            setLoading(true);
+
             // Prepare data for API
             const caseData = {
                 title: caseTitle.trim(),
-                scan_type: selectedScanType,
-                scan_parameter: selectedScanParameter,
-                scan_qr: scanQrText.trim(),
-                qr_character_length: parseInt(qrCharacterLength)
+                scan_type: selectedScanType?.id,
+                scan_parameter: selectedScanParameter?.id,
+                qr_length: qrCharacterLength,
+                user_id: await AsyncStorage.getItem('npk'),
             };
 
-            // TODO: Replace with actual API call
             console.log('Case data to submit:', caseData);
+            const response = await api.post('/cases', caseData);
             
             Alert.alert('Success', 'Case created successfully!', [
                 { text: 'OK', onPress: () => navigation.goBack() }
@@ -89,6 +93,8 @@ const CreateScreen = ({navigation}) => {
         } catch (error) {
             console.error('Error creating case:', error);
             Alert.alert('Error', 'Failed to create case. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -99,7 +105,7 @@ const CreateScreen = ({navigation}) => {
 
                 {/* Case Title Input */}
                 <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Case Title *</Text>
+                    <Text style={styles.label}>Case Title</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="Enter case title"
@@ -110,12 +116,12 @@ const CreateScreen = ({navigation}) => {
 
                 {/* Scan Type Select */}
                 <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Scan Type *</Text>
+                    <Text style={styles.label}>Scan Type</Text>
                     <TouchableOpacity
                         style={styles.selectButton}
                         onPress={() => setScanTypeModalVisible(true)}>
                         <Text style={selectedScanType ? styles.selectButtonTextSelected : styles.selectButtonTextPlaceholder}>
-                            {selectedScanType || 'Select scan type'}
+                            {selectedScanType?.label || 'Select scan type'}
                         </Text>
                         <Text style={styles.selectButtonArrow}>▼</Text>
                     </TouchableOpacity>
@@ -123,12 +129,12 @@ const CreateScreen = ({navigation}) => {
 
                 {/* Scan Parameter Select */}
                 <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Scan Parameter *</Text>
+                    <Text style={styles.label}>Scan Parameter</Text>
                     <TouchableOpacity
                         style={styles.selectButton}
                         onPress={() => setScanParameterModalVisible(true)}>
                         <Text style={selectedScanParameter ? styles.selectButtonTextSelected : styles.selectButtonTextPlaceholder}>
-                            {selectedScanParameter || 'Select scan parameter'}
+                            {selectedScanParameter?.label || 'Select scan parameter'}
                         </Text>
                         <Text style={styles.selectButtonArrow}>▼</Text>
                     </TouchableOpacity>
@@ -145,6 +151,7 @@ const CreateScreen = ({navigation}) => {
                         multiline={true}
                         numberOfLines={4}
                         textAlignVertical="top"
+                        showSoftInputOnFocus={false} // ✅ disables keyboard
                     />
                 </View>
 
@@ -160,8 +167,12 @@ const CreateScreen = ({navigation}) => {
                 </View>
 
                 {/* Submit Button */}
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Text style={styles.submitButtonText}>Create Case</Text>
+                <TouchableOpacity style={[styles.submitButton, loading && styles.buttonDisabled]} onPress={handleSubmit} disabled={loading}>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Text style={styles.submitButtonText}>Create Case</Text>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -337,6 +348,9 @@ const styles = StyleSheet.create({
     modalOptionText: {
         fontSize: 16,
         color: '#212121',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
 });
 
