@@ -26,14 +26,10 @@ const ScanV2Screen = ({navigation, route}) => {
     const scanInputRef = useRef(null);
     const [qrCode, setQrCode] = useState('');
     const [error, setError] = useState('');
-    const [isJudgmentVisible, setIsJudgmentVisible] = useState(false);
     const [isSuspect, setIsSuspect] = useState('');
     const [loading, setLoading] = useState(false);
     const [isMenuVisible, setMenuVisible] = useState(false);
-    const [judgmentState, setJudgmentState] = useState({
-        message: '',
-        color: '',
-    });
+    const [judgment, setJudgment] = useState({ visible: false, message: '', color: '' });
     const [scanProgress, setScanProgress] = useState({
         currentProgress: '',
         maxProgress: '',
@@ -56,17 +52,18 @@ const ScanV2Screen = ({navigation, route}) => {
     const handleSubmit = async () => {
         try {
             setError('');
-            // Check qr content length
             setLoading(true); // Show loading spinner
-            if (qrCode.length != caseData.qr_length) {
-                setError('QR tidak sesuai, silahkan scan lagi.');
-                setQrCode('');
-                // Use setTimeout to ensure focus happens after state update
-                setTimeout(() => {
-                    scanInputRef.current.focus();
-                }, 0);
-                return;
-            }
+
+            // Check qr content length
+            // if (qrCode.length != caseData.qr_length) {
+            //     setError('QR tidak sesuai, silahkan scan lagi.');
+            //     setQrCode('');
+            //     // Use setTimeout to ensure focus happens after state update
+            //     setTimeout(() => {
+            //         scanInputRef.current.focus();
+            //     }, 0);
+            //     return;
+            // }
 
             const npk = await AsyncStorage.getItem('npk');
             const {data} = await api.post('/scan', {
@@ -75,17 +72,6 @@ const ScanV2Screen = ({navigation, route}) => {
                 suspect_case_id: caseData.suspect_case_id,
                 scanned_by: npk,
             });
-
-            if (data.meta.code === 422) {
-                setIsJudgmentVisible(false);
-                setQrCode('');
-                setResult(prev => ({
-                    ...prev,
-                    isResultVisible: false,
-                }));
-                scanInputRef.current.focus();
-                return Alert.alert('Scan Gagal!', 'QR sudah discan!');
-            }
 
             data.data.is_suspect ? showNgAlert() : showOkAlert();
 
@@ -106,8 +92,30 @@ const ScanV2Screen = ({navigation, route}) => {
                 mainText: data.data.is_suspect ? 'NG' : 'OK',
                 partNo: data.data.part_no,
             });
-        } catch (error) {
-            console.error('Error handleSubmit():', error);
+        } catch (err) {
+            // Axios error with response
+            if (err.response) {
+                const { status, data } = err.response;
+
+                if (status === 422) {
+                    // setIsJudgmentVisible(false);
+                    setJudgment(prev => ({ ...prev, visible: false }));
+                    setQrCode('');
+                    setResult(prev => ({
+                        ...prev,
+                        isResultVisible: false,
+                    }));
+                    scanInputRef.current?.focus();
+                    return Alert.alert('Scan Gagal!', 'QR sudah discan!');
+                }
+
+                // Optionally handle other errors like 400, 401, 500, etc.
+                Alert.alert('Terjadi Kesalahan', `(${status}) ${data?.message || 'Unknown error'}`);
+            } else {
+                // No response from server
+                console.error('Error handleSubmit():', err);
+                Alert.alert('Network Error', 'Tidak dapat terhubung ke server.');
+            }
         } finally {
             setLoading(false);
         }
@@ -115,21 +123,21 @@ const ScanV2Screen = ({navigation, route}) => {
 
     /* Function to show OK alert with green color */
     const showOkAlert = () => {
-        setJudgmentState({
-            message: 'OK',
-            color: 'green',
-        });
-        setIsJudgmentVisible(true);
+        setJudgment({ visible: true, message: 'OK', color: 'green' });
     };
 
     /* Function to show NG alert with red color */
     const showNgAlert = () => {
-        setJudgmentState({
-            message: 'NG',
-            color: 'red',
-        });
-        setIsJudgmentVisible(true);
+        setJudgment({ visible: true, message: 'NG', color: 'red' });
     };
+
+    /* Judgment Component */
+    const JudgmentAlert = ({ visible, message, color }) =>
+        visible ? (
+            <View style={[styles.squareAlert, { backgroundColor: color }]}>
+                <Text style={styles.alertText}>{message}</Text>
+            </View>
+        ) : null;
 
     const getScanProgress = async () => {
         try {
@@ -143,8 +151,8 @@ const ScanV2Screen = ({navigation, route}) => {
                     maxProgress: data.data.max_progress,
                 });
             }
-        } catch (error) {
-            console.error('Error getScanProgress():', error);
+        } catch (err) {
+            console.error('Error getScanProgress():', err);
         }
     };
 
@@ -179,18 +187,34 @@ const ScanV2Screen = ({navigation, route}) => {
         setMenuVisible(false);
     };
 
+    const handleClear = () => {
+        setQrCode('');
+        // Refocus the input after clearing
+        if (scanInputRef.current) {
+            scanInputRef.current.focus();
+        }
+    };
+
     return (
         <AutocompleteDropdownContextProvider>
             <ScrollView contentContainerStyle={{flexGrow: 1}} style={{flex: 1}}>
                 <View style={styles.container}>
-                    <TextInput
-                        ref={scanInputRef}
-                        style={styles.input}
-                        placeholder="Scan QR Code"
-                        value={qrCode}
-                        onChangeText={setQrCode}
-                        onSubmitEditing={handleSubmit}
-                    />
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            ref={scanInputRef}
+                            style={styles.input}
+                            placeholder="Scan QR Code"
+                            value={qrCode}
+                            onChangeText={setQrCode}
+                            onSubmitEditing={handleSubmit}
+                            showSoftInputOnFocus={false} // ✅ disables keyboard
+                        />
+                        {qrCode.length > 0 && (
+                            <TouchableOpacity onPress={handleClear}>
+                                <Text style={styles.clearIcon}>✕</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
                     <View style={styles.progressContainer}>
                         <Text style={styles.progressText}>
@@ -268,19 +292,11 @@ const ScanV2Screen = ({navigation, route}) => {
                                 </View>
                             )}
 
-                            {/* <View></View> */}
-
-                            {isJudgmentVisible && (
-                                <View
-                                    style={[
-                                        styles.squareAlert,
-                                        {backgroundColor: judgmentState.color},
-                                    ]}>
-                                    <Text style={styles.alertText}>
-                                        {judgmentState.message}
-                                    </Text>
-                                </View>
-                            )}
+                            <JudgmentAlert
+                                visible={judgment.visible}
+                                message={judgment.message}
+                                color={judgment.color}
+                            />
                         </>
                     )}
 
@@ -454,6 +470,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000',
     },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+      },
+      input: {
+        flex: 1,
+        height: 40,
+      },
+      clearIcon: {
+        fontSize: 18,
+        color: '#888',
+        paddingHorizontal: 8,
+      },
 });
 
 export default ScanV2Screen;

@@ -18,6 +18,7 @@ import {
     AutocompleteDropdown,
     AutocompleteDropdownContextProvider,
 } from 'react-native-autocomplete-dropdown';
+import {printLabel} from '../utils/print';
 
 const ScanMultiBox = ({navigation, route}) => {
     const {caseData} = route.params;
@@ -27,11 +28,7 @@ const ScanMultiBox = ({navigation, route}) => {
     const [error, setError] = useState('');
     const [isSuspect, setIsSuspect] = useState('');
     const [isMenuVisible, setMenuVisible] = useState(false);
-    const [judgmentState, setJudgmentState] = useState({
-        judgment: false,
-        message: '',
-        color: '',
-    });
+    const [judgment, setJudgment] = useState({ visible: false, message: '', color: '' });
     const [scanProgress, setScanProgress] = useState({
         currentProgress: '',
         maxProgress: '',
@@ -62,15 +59,15 @@ const ScanMultiBox = ({navigation, route}) => {
             }
 
             // Check qr content length
-            if (qrCode.length != caseData.qr_length) {
-                setError('QR tidak sesuai, silahkan scan lagi.');
-                setQrCode('');
-                // Use setTimeout to ensure focus happens after state update
-                setTimeout(() => {
-                    scanInputRef.current.focus();
-                }, 0);
-                return;
-            }
+            // if (qrCode.length != caseData.qr_length) {
+            //     setError('QR tidak sesuai, silahkan scan lagi.');
+            //     setQrCode('');
+            //     // Use setTimeout to ensure focus happens after state update
+            //     setTimeout(() => {
+            //         scanInputRef.current.focus();
+            //     }, 0);
+            //     return;
+            // }
 
             const npk = await AsyncStorage.getItem('npk');
             const {data} = await api.post('/scan/multi-box', {
@@ -87,16 +84,15 @@ const ScanMultiBox = ({navigation, route}) => {
                     ...prevState,
                     isResultVisible: false,
                 }));
-                setJudgmentState(prevState => ({
+                setJudgment(prevState => ({
                     ...prevState,
-                    judgment: false,
+                    visible: false,
                 }));
                 scanInputRef.current.focus();
                 return Alert.alert('Scan Gagal!', 'QR sudah discan!');
             }
 
             data.data.is_suspect ? showNgAlert() : showOkAlert();
-            // data.data.is_suspect === true ? showNgAlert() : showOkAlert();
 
             setIsSuspect(data.data.is_suspect);
             getScanProgress();
@@ -112,15 +108,41 @@ const ScanMultiBox = ({navigation, route}) => {
                 scanParamValue: data.data.search_value,
             });
             scanInputRef.current?.focus();
-        } catch (error) {
-            console.error('Error handleSubmit():', error);
+            printLabel({
+                mainText: data.data.is_suspect ? 'NG' : 'OK',
+                partNo: data.data.part_no,
+            });
+        } catch (err) {
+            // Axios error with response
+            if (err.response) {
+                const { status, data } = err.response;
+
+                if (status === 422) {
+                    // setIsJudgmentVisible(false);
+                    setJudgment(prev => ({ ...prev, visible: false }));
+                    setQrCode('');
+                    setResult(prev => ({
+                        ...prev,
+                        isResultVisible: false,
+                    }));
+                    scanInputRef.current?.focus();
+                    return Alert.alert('Scan Gagal!', 'QR sudah discan!');
+                }
+
+                // Optionally handle other errors like 400, 401, 500, etc.
+                Alert.alert('Terjadi Kesalahan', `(${status}) ${data?.message || 'Unknown error'}`);
+            } else {
+                // No response from server
+                console.error('Error handleSubmit():', err);
+                Alert.alert('Network Error', 'Tidak dapat terhubung ke server.');
+            }
         }
     };
 
     /* Function to show OK alert with green color */
     const showOkAlert = () => {
-        setJudgmentState({
-            judgment: true,
+        setJudgment({
+            visible: true,
             message: 'OK',
             color: 'green',
         });
@@ -128,12 +150,20 @@ const ScanMultiBox = ({navigation, route}) => {
 
     /* Function to show NG alert with red color */
     const showNgAlert = () => {
-        setJudgmentState({
-            judgment: true,
+        setJudgment({
+            visible: true,
             message: 'NG',
             color: 'red',
         });
     };
+
+    /* Judgment Component */
+    const JudgmentAlert = ({ visible, message, color }) =>
+        visible ? (
+            <View style={[styles.squareAlert, { backgroundColor: color }]}>
+                <Text style={styles.alertText}>{message}</Text>
+            </View>
+        ) : null;
 
     const getScanProgress = async () => {
         try {
@@ -201,6 +231,7 @@ const ScanMultiBox = ({navigation, route}) => {
                         value={qrCode}
                         onChangeText={setQrCode}
                         onSubmitEditing={handleSubmit}
+                        showSoftInputOnFocus={false} // ✅ disables keyboard
                     />
 
                     <View style={styles.progressContainer}>
@@ -263,17 +294,11 @@ const ScanMultiBox = ({navigation, route}) => {
                         </View>
                     )}
 
-                    {judgmentState.judgment && (
-                        <View
-                            style={[
-                                styles.squareAlert,
-                                {backgroundColor: judgmentState.color},
-                            ]}>
-                            <Text style={styles.alertText}>
-                                {judgmentState.message}
-                            </Text>
-                        </View>
-                    )}
+                    <JudgmentAlert
+                        visible={judgment.visible}
+                        message={judgment.message}
+                        color={judgment.color}
+                    />
 
                     {/* Dropdown Menu Modal */}
                     {isMenuVisible && (
