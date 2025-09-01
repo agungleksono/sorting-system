@@ -57,20 +57,6 @@ const ReprintScreen = ({navigation, route}) => {
                 suspect_case_id: caseData.suspect_case_id,
             });
 
-            if (data.meta.code === 404) {
-                setJudgmentState(prevState => ({
-                    ...prevState,
-                    judgment: false,
-                }));
-                setResult(prevState => ({
-                    ...prevState,
-                    isResultVisible: false,
-                }));
-                setQrCode('');
-                scanInputRef.current.focus();
-                return Alert.alert('Reprint Gagal!', 'QR tidak ditemukan!');
-            }
-
             data.data.is_suspect ? showNgAlert() : showOkAlert();
 
             setIsSuspect(data.data.is_suspect);
@@ -89,8 +75,31 @@ const ReprintScreen = ({navigation, route}) => {
                 mainText: data.data.is_suspect ? 'NG' : 'OK',
                 partNo: data.data.part_no,
             });
-        } catch (error) {
-            console.error('Error handleSubmit():', error);
+        } catch (err) {
+            if (err.response) {
+                const { status, data } = err.response;
+
+                if (status === 404) {
+                    setJudgmentState(prevState => ({
+                        ...prevState,
+                        judgment: false,
+                    }));
+                    setResult(prevState => ({
+                        ...prevState,
+                        isResultVisible: false,
+                    }));
+                    setQrCode('');
+                    scanInputRef.current.focus();
+                    return Alert.alert('Reprint Gagal!', 'QR tidak ditemukan!');
+                }
+
+                // Optionally handle other errors like 400, 401, 500, etc.
+                Alert.alert('Terjadi Kesalahan', `(${status}) ${data?.message || 'Unknown error'}`);
+            } else {
+                // No response from server
+                console.error('Error handleSubmit():', err);
+                Alert.alert('Network Error', 'Tidak dapat terhubung ke server.');
+            }
         }
     };
 
