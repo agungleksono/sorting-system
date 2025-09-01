@@ -17,6 +17,7 @@ import {
     BluetoothEscposPrinter,
     BluetoothTscPrinter,
 } from 'react-native-bluetooth-escpos-printer';
+import {LabelPrinter} from '../utils/print2';
 
 const PrintSettingsScreen = ({navigation}) => {
     // const [isEnabled, setIsEnabled] = useState(false);
@@ -225,11 +226,29 @@ const PrintSettingsScreen = ({navigation}) => {
     //     );
     // }, []);
 
+    const testPrint = () => {
+        LabelPrinter();
+        // connectAndPrint({
+        //     mainText: 'NG',
+        //     partNo: 'JK93541-51041',
+        // });
+    }
+
+    const handlePrint = async () => {
+        try {
+            await LabelPrinter();
+            Alert.alert('Success', 'Label printed successfully');
+        } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to print label');
+        }
+    };
+
     return (
         <View style={{padding: 20}}>
             <Text style={{marginBottom: 10}}>Bluetooth Print Demo</Text>
             {/* <Button title="Test Print" onPress={testPrint} /> */}
             <Button title="Print Label" onPress={printLabel} />
+            <Button title="Test Print" onPress={handlePrint} />
         </View>
     );
 };
