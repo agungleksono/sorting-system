@@ -6,7 +6,7 @@ import {
 
 const PRINTER_ADDRESS = '10:23:81:2E:81:19'; // Your paired printer MAC address
 
-export const LabelPrinter = async () => {
+export const printCustomLabel = async ({judgment = 'NG', partNo = '<Part No>', sequence = '<Sequence>'}) => {
     try {
         // Connect to printer by MAC address
         await BluetoothManager.connect(PRINTER_ADDRESS);
@@ -24,8 +24,8 @@ export const LabelPrinter = async () => {
             text: [
                 {
                     x: 230,
-                    y: 80,
-                    text: 'NG',
+                    y: 50,
+                    text: judgment,
                     fonttype: 'FONT_1',
                     rotation: 0,
                     xscal: 7,
@@ -33,11 +33,20 @@ export const LabelPrinter = async () => {
                 },
                 {
                     x: 230,
-                    y: 240,
-                    text: `P/N  : JK93541-51041`,
+                    y: 210,
+                    text: partNo,
                     fonttype: 'FONT_2',
                     rotation: 0,
-                    xscal: 1,
+                    xscal: 2,
+                    yscal: 2,
+                },
+                {
+                    x: 230,
+                    y: 250,
+                    text: sequence,
+                    fonttype: 'FONT_2',
+                    rotation: 0,
+                    xscal: 2,
                     yscal: 2,
                 },
             ],

@@ -17,7 +17,7 @@ import {
     BluetoothEscposPrinter,
     BluetoothTscPrinter,
 } from 'react-native-bluetooth-escpos-printer';
-import {LabelPrinter} from '../utils/print2';
+import {printCustomLabel} from '../utils/labelPrint';
 
 const PrintSettingsScreen = ({navigation}) => {
     // const [isEnabled, setIsEnabled] = useState(false);
@@ -85,7 +85,7 @@ const PrintSettingsScreen = ({navigation}) => {
     //     }
     // };
 
-    const printLabel = async () => {
+    const printLabelTest = async () => {
         try {
             await requestPermissions();
             await BluetoothManager.connect(PRINTER_ADDRESS);
@@ -236,19 +236,28 @@ const PrintSettingsScreen = ({navigation}) => {
 
     const handlePrint = async () => {
         try {
-            await LabelPrinter();
+            await printCustomLabel();
             Alert.alert('Success', 'Label printed successfully');
         } catch (error) {
             Alert.alert('Error', error.message || 'Failed to print label');
         }
     };
 
+    const handlePreview = useCallback(() => {
+        navigation.navigate('PrintPreview');
+    }, [navigation]);
+
+    const handlePreview2 = useCallback(() => {
+        PrintLabel();
+    });
+
     return (
         <View style={{padding: 20}}>
             <Text style={{marginBottom: 10}}>Bluetooth Print Demo</Text>
             {/* <Button title="Test Print" onPress={testPrint} /> */}
-            <Button title="Print Label" onPress={printLabel} />
+            <Button title="Print Label" onPress={printLabelTest} />
             <Button title="Test Print" onPress={handlePrint} />
+            <Button title="Preview Print" onPress={handlePreview} />
         </View>
     );
 };

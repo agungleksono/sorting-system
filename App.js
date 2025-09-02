@@ -13,6 +13,7 @@ import ReprintScreen from './src/screens/ReprintScreen';
 import ListSuspectScreen from './src/screens/ListSuspectScreen';
 import PrintSettingsScreen from './src/screens/PrintSettingsScreen';
 import CaseCreateScreen from './src/screens/cases/CreateScreen';
+import PrintPreviewScreen from './src/screens/PrintPreviewScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -60,6 +61,11 @@ const App = () => {
                     name="NewCase"
                     component={CaseCreateScreen}
                     options={{title: 'New Case'}}
+                />
+                <Stack.Screen
+                    name="PrintPreview"
+                    component={PrintPreviewScreen}
+                    options={{title: 'Print Preview'}}
                 />
             </Stack.Navigator>
         </NavigationContainer>
