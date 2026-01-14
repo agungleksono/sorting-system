@@ -11,19 +11,26 @@ import {
     View,
     Button,
     Alert,
+    TextInput,
+    StyleSheet,
+    TouchableOpacity,
 } from 'react-native';
 import {
     BluetoothManager,
     BluetoothEscposPrinter,
     BluetoothTscPrinter,
 } from 'react-native-bluetooth-escpos-printer';
-import {LabelPrinter} from '../utils/print2';
+import {printCustomLabel} from '../utils/labelPrint';
+import { getPrinterMac, savePrinterMac, clearPrinterMac } from '../utils/macAddressStorage';
 
 const PrintSettingsScreen = ({navigation}) => {
     // const [isEnabled, setIsEnabled] = useState(false);
     // const [devices, setDevices] = useState([]);
     // const [selectedDevice, setSelectedDevice] = useState(null);
-    const PRINTER_ADDRESS = '10:23:81:2E:81:19';
+    const [macAddress, setMacAddress] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    // const PRINTER_MAC_ADDRESS = '10:23:81:2E:81:19';
 
     // Ask for Bluetooth permissions on Android
     const requestPermissions = async () => {
@@ -38,6 +45,7 @@ const PrintSettingsScreen = ({navigation}) => {
     };
 
     useEffect(() => {
+        fetchMac();
         requestPermissions();
     }, []);
 
@@ -226,31 +234,131 @@ const PrintSettingsScreen = ({navigation}) => {
     //     );
     // }, []);
 
-    const testPrint = () => {
-        LabelPrinter();
-        // connectAndPrint({
-        //     mainText: 'NG',
-        //     partNo: 'JK93541-51041',
-        // });
-    }
 
     const handlePrint = async () => {
         try {
-            await LabelPrinter();
+            await printCustomLabel({});
             Alert.alert('Success', 'Label printed successfully');
         } catch (error) {
             Alert.alert('Error', error.message || 'Failed to print label');
         }
     };
 
+    const fetchMac = async () => {
+        const mac = await getPrinterMac();
+        setMacAddress(mac);
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            await savePrinterMac(macAddress);
+            setIsEditing(false);
+            Alert.alert('Success', 'Successfully set Mac Address.');
+        } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to save Mac Address');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <View style={{padding: 20}}>
-            <Text style={{marginBottom: 10}}>Bluetooth Print Demo</Text>
-            {/* <Button title="Test Print" onPress={testPrint} /> */}
-            <Button title="Print Label" onPress={printLabel} />
+            <Text style={styles.label}>Bluetooth Print Demo</Text>
+            {/* <Button title="Print Label" onPress={printLabel} /> */}
             <Button title="Test Print" onPress={handlePrint} />
+
+            {/* Mac Address Input */}
+            <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Mac Address</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Enter Mac Address"
+                    value={macAddress}
+                    onChangeText={setMacAddress}
+                    editable={isEditing}
+                />
+            </View>
+
+            <View style={styles.buttonContainer}>
+                {/* Save Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.button, 
+                        styles.saveButton,
+                        (loading || !isEditing) && styles.buttonDisabled
+                    ]}
+                    disabled={(loading || !isEditing)}
+                    onPress={handleSave}
+                >
+                    {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                    <Text style={styles.buttonText}>Save</Text>
+                    )}
+                </TouchableOpacity>
+
+                {/* Edit Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.button, 
+                        styles.editButton,
+                        isEditing && styles.buttonDisabled
+                    ]}
+                    disabled={isEditing}
+                    onPress={() => setIsEditing(true)}
+                >
+                    <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    fieldContainer: {
+        marginTop: 15,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#212121',
+        marginBottom: 8,
+    },
+    input: {
+        height: 50,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontSize: 16,
+        backgroundColor: '#fff',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10, // if using RN >= 0.71
+        marginTop: 20,
+    },
+    button: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    saveButton: {
+        backgroundColor: '#5CA9F5',
+    },
+    editButton: {
+        backgroundColor: '#59C28D',
+    },
+    buttonDisabled: {
+        backgroundColor: '#9E9E9E',
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+})
 
 export default PrintSettingsScreen;

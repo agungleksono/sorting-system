@@ -19,6 +19,7 @@ import {
     AutocompleteDropdownContextProvider,
 } from 'react-native-autocomplete-dropdown';
 import {printLabel} from '../utils/print';
+import {printCustomLabel} from '../utils/labelPrint';
 
 const ScanMultiBox = ({navigation, route}) => {
     const {caseData} = route.params;
@@ -108,9 +109,10 @@ const ScanMultiBox = ({navigation, route}) => {
                 scanParamValue: data.data.search_value,
             });
             scanInputRef.current?.focus();
-            printLabel({
-                mainText: data.data.is_suspect ? 'NG' : 'OK',
+            await printCustomLabel({
+                judgment: data.data.is_suspect ? 'NG' : 'OK',
                 partNo: data.data.part_no,
+                sequence: data.data.sequence,
             });
         } catch (err) {
             // Axios error with response
